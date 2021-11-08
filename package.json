@@ -16,5 +16,8 @@
   "bugs": {
     "url": "https://github.com/denn15law/tinyapp/issues"
   },
-  "homepage": "https://github.com/denn15law/tinyapp#readme"
+  "homepage": "https://github.com/denn15law/tinyapp#readme",
+  "dependencies": {
+    "express": "^4.17.1"
+  }
 }
