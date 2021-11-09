@@ -22,27 +22,30 @@ function generateRandomString() {
   return result;
 }
 
+//HOME PAGE
 app.get("/", (req, res) => {
   res.send("Home Page");
 });
 
+//SHOW ALL URLS
 app.get("/urls", (req, res) => {
   const templateVars = { urls: urlDatabase };
   res.render("urls_index", templateVars);
 });
 
+//CREATE NEW URL PAGE
 app.get("/urls/new", (req, res) => {
   res.render("urls_new");
 });
 
+//POST METHOD CALL FROM FORM,
 app.post("/urls", (req, res) => {
-  // console.log(req.body);
   const newShortURL = generateRandomString();
   urlDatabase[newShortURL] = req.body.longURL;
-  // console.log(urlDatabase);
   res.redirect(`/urls/${newShortURL}`);
 });
 
+//RENDER SINGLE URL SHOW PAGE
 app.get("/urls/:shortURL", (req, res) => {
   const templateVars = {
     shortURL: req.params.shortURL,
@@ -51,6 +54,7 @@ app.get("/urls/:shortURL", (req, res) => {
   res.render("urls_show", templateVars);
 });
 
+//USE REDIRECT TO LONG URL AFTER RENDERING URL SHOW PAGE
 app.get("/u/:shortURL", (req, res) => {
   const longURL = urlDatabase[req.params.shortURL];
   res.redirect(longURL);
