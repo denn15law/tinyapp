@@ -22,7 +22,7 @@
 
   <div class = "text-center">
     <h2 class="text-secondary font-weight-bold m-2">Edit</h2>
-    <form action="" method="POST">
+    <form action="/urls/<%= shortURL %>" method="POST">
       <label for="longURL">New URL:</label>
       <input type="text" name="longURL" placeholder="http://">
       <button type="submit" class="btn btn-primary">Edit</button>

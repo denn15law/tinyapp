@@ -48,11 +48,20 @@ app.get("/urls/new", (req, res) => {
   res.render("urls_new");
 });
 
-//POST METHOD CALL FROM FORM,
+//POST METHOD CALL TO ADD NEW URL
 app.post("/urls", (req, res) => {
   const newShortURL = generateRandomString();
   urlDatabase[newShortURL] = req.body.longURL;
   res.redirect(`/urls/${newShortURL}`);
+});
+
+//POST METHOD TO EDIT LONG URL
+app.post("/urls/:shortURL", (req, res) => {
+  const shortURL = req.params.shortURL;
+  const newLongURL = req.body.longURL;
+  //Make the edit to urlDatabase
+  urlDatabase[shortURL] = newLongURL;
+  res.redirect("/urls");
 });
 
 //RENDER SINGLE URL SHOW PAGE
@@ -70,6 +79,7 @@ app.get("/u/:shortURL", (req, res) => {
   res.redirect(longURL);
 });
 
+//LISTENING APP
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}`);
 });
