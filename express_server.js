@@ -33,6 +33,16 @@ app.get("/urls", (req, res) => {
   res.render("urls_index", templateVars);
 });
 
+//POST METHOD CALL FROM DELETE BUTTON
+app.post("/urls/:shortURL/delete", (req, res) => {
+  //delete url
+  const shortURL = req.params.shortURL;
+  delete urlDatabase[shortURL];
+
+  //redirct to url_index (/urls)
+  res.redirect("/urls");
+});
+
 //CREATE NEW URL PAGE
 app.get("/urls/new", (req, res) => {
   res.render("urls_new");
