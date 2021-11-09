@@ -79,6 +79,13 @@ app.get("/u/:shortURL", (req, res) => {
   res.redirect(longURL);
 });
 
+//POST METHOD TO HANDLE USERNAME SUBMISSION
+app.post("/login", (req, res) => {
+  console.log(req.body);
+  res.cookie("user", req.body.username);
+  res.redirect("/urls");
+});
+
 //LISTENING APP
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}`);
