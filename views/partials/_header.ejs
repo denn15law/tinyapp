@@ -19,10 +19,12 @@
           <button class="btn btn-outline-dark" type="submit">Logout</button>
         </form>
       <% } else{ %>
-        <form action="/login" method="POST">
-          <input type="text" name="username" placeholder="Username">
-          <button class="btn btn-outline-dark" type="submit">Login</button>
-        </form>
+        <a href="/login" class="mx-2">
+          <button class="btn btn-secondary">Login</button>
+        </a>
+        <a href="/register" class="mx-2">
+          <button class="btn btn-primary">Register</button>
+        </a>
       <% } %>
     </div>
   </nav>

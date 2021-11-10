@@ -1,14 +1,13 @@
 const express = require("express");
+const bodyParser = require("body-parser");
+const cookieParser = require("cookie-parser");
+
 const app = express();
 const PORT = 8080; //default port 8080
 
-app.set("view engine", "ejs");
-
-const bodyParser = require("body-parser");
-const cookieParser = require("cookie-parser");
 app.use(bodyParser.urlencoded({ extended: true }));
-
 app.use(cookieParser());
+app.set("view engine", "ejs");
 
 const urlDatabase = {
   b2xVn2: "http://www.lighthouselabs.ca",
@@ -37,11 +36,6 @@ function generateRandomString() {
   }
   return result;
 }
-
-//HOME PAGE
-app.get("/", (req, res) => {
-  res.send("Home Page");
-});
 
 //SHOW ALL URLS
 app.get("/urls", (req, res) => {
@@ -83,6 +77,7 @@ app.post("/urls", (req, res) => {
 app.post("/urls/:shortURL", (req, res) => {
   const shortURL = req.params.shortURL;
   const newLongURL = req.body.longURL;
+
   //Make the edit to urlDatabase
   urlDatabase[shortURL] = newLongURL;
   res.redirect("/urls");
