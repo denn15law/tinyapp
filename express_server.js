@@ -15,6 +15,19 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com",
 };
 
+const users = {
+  userRandomID: {
+    id: "userRandomID",
+    email: "user@example.com",
+    password: "purple-monkey-dinosaur",
+  },
+  user2RandomID: {
+    id: "user2RandomID",
+    email: "user2@example.com",
+    password: "dishwasher-funk",
+  },
+};
+
 function generateRandomString() {
   let result = "";
   const characters =
@@ -32,9 +45,11 @@ app.get("/", (req, res) => {
 
 //SHOW ALL URLS
 app.get("/urls", (req, res) => {
+  const currentUserID = req.cookies["user_id"];
+  const currentUser = users[currentUserID];
   const templateVars = {
     urls: urlDatabase,
-    username: req.cookies["username"],
+    user: currentUser,
   };
   res.render("urls_index", templateVars);
 });
@@ -51,7 +66,9 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 
 //CREATE NEW URL PAGE
 app.get("/urls/new", (req, res) => {
-  const templateVars = { username: req.cookies["username"] };
+  const currentUserID = req.cookies["user_id"];
+  const currentUser = users[currentUserID];
+  const templateVars = { user: currentUser };
   res.render("urls_new", templateVars);
 });
 
@@ -73,8 +90,10 @@ app.post("/urls/:shortURL", (req, res) => {
 
 //RENDER SINGLE URL SHOW PAGE
 app.get("/urls/:shortURL", (req, res) => {
+  const currentUserID = req.cookies["user_id"];
+  const currentUser = users[currentUserID];
   const templateVars = {
-    username: req.cookies["username"],
+    user: currentUser,
     shortURL: req.params.shortURL,
     longURL: urlDatabase[req.params.shortURL],
   };
@@ -103,11 +122,52 @@ app.post("/logout", (req, res) => {
   res.redirect("/urls");
 });
 
+//GET REQUEST TO RENDER REGISTER PAGE
 app.get("/register", (req, res) => {
+  const currentUserID = req.cookies["user_id"];
+  const currentUser = users[currentUserID];
   const templateVars = {
-    username: req.cookies["username"],
+    user: currentUser,
   };
   res.render("register", templateVars);
+});
+
+function checkEmailwithinUsers(users, submittedEmail) {
+  for (let user in users) {
+    if (users[user].email === submittedEmail) {
+      return true;
+    }
+  }
+  return false;
+}
+
+//POST REQUEST TO HANDLE REGISTER SUBMISSION
+app.post("/register", (req, res) => {
+  //check if email and password are empty strings
+  if (!req.body.email || !req.body.password) {
+    return res.status(400).send("Error 400: Empty Email or Password");
+  }
+
+  //check if email already within database
+  if (checkEmailwithinUsers(users, req.body.email)) {
+    return res.status(400).send("Error 400: Email already Exists");
+  }
+
+  //check user object for existing email
+  console.log(checkEmailwithinUsers(users, req.body.email));
+
+  //generate new userID and create new object in users
+  const userID = generateRandomString();
+  users[userID] = {
+    id: userID,
+    email: req.body.email,
+    password: req.body.password,
+  };
+
+  //create new cookie
+  res.cookie("user_id", userID);
+  // console.log(users);
+  res.redirect("/urls");
 });
 
 //LISTENING APP
