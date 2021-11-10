@@ -5,7 +5,10 @@ const PORT = 8080; //default port 8080
 app.set("view engine", "ejs");
 
 const bodyParser = require("body-parser");
+const cookieParser = require("cookie-parser");
 app.use(bodyParser.urlencoded({ extended: true }));
+
+app.use(cookieParser());
 
 const urlDatabase = {
   b2xVn2: "http://www.lighthouselabs.ca",
@@ -29,7 +32,10 @@ app.get("/", (req, res) => {
 
 //SHOW ALL URLS
 app.get("/urls", (req, res) => {
-  const templateVars = { urls: urlDatabase };
+  const templateVars = {
+    urls: urlDatabase,
+    username: req.cookies["username"],
+  };
   res.render("urls_index", templateVars);
 });
 
@@ -45,7 +51,8 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 
 //CREATE NEW URL PAGE
 app.get("/urls/new", (req, res) => {
-  res.render("urls_new");
+  const templateVars = { username: req.cookies["username"] };
+  res.render("urls_new", templateVars);
 });
 
 //POST METHOD CALL TO ADD NEW URL
@@ -67,6 +74,7 @@ app.post("/urls/:shortURL", (req, res) => {
 //RENDER SINGLE URL SHOW PAGE
 app.get("/urls/:shortURL", (req, res) => {
   const templateVars = {
+    username: req.cookies["username"],
     shortURL: req.params.shortURL,
     longURL: urlDatabase[req.params.shortURL],
   };
@@ -81,8 +89,17 @@ app.get("/u/:shortURL", (req, res) => {
 
 //POST METHOD TO HANDLE USERNAME SUBMISSION
 app.post("/login", (req, res) => {
-  console.log(req.body);
-  res.cookie("user", req.body.username);
+  // console.log(req.body);
+  res.cookie("username", req.body.username);
+  // console.log("cookie", req.cookies);
+  res.redirect("/urls");
+});
+
+//POST METHOD TO HANDLE LOGOUT (CLEAR COOKIE)
+app.post("/logout", (req, res) => {
+  //clear cookies
+  res.clearCookie("username");
+  //redriect to /urls
   res.redirect("/urls");
 });
 
