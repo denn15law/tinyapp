@@ -13,8 +13,8 @@
       </div>
     </div>
     <div class="d-flex align-self-center">
-      <% if(username) { %>
-        <p class="px-5 font-weight-bold">Logged in As: <%= username %>!</p>
+      <% if(user) { %>
+        <p class="px-5 font-weight-bold">Logged in As: <%= user.email %>!</p>
         <form action="/logout" method="POST">
           <button class="btn btn-outline-dark" type="submit">Logout</button>
         </form>
