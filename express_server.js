@@ -170,6 +170,16 @@ app.post("/register", (req, res) => {
   res.redirect("/urls");
 });
 
+//GET METHOD TO RENDER LOGIN PAGE
+app.get("/login", (req, res) => {
+  const currentUserID = req.cookies["user_id"];
+  const currentUser = users[currentUserID];
+  const templateVars = {
+    user: currentUser,
+  };
+  res.render("login", templateVars);
+});
+
 //LISTENING APP
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}`);
