@@ -5,6 +5,7 @@ const morgan = require("morgan");
 const bcrypt = require("bcryptjs");
 const cookieSession = require("cookie-session");
 const { getUserByEmail } = require("./helpers");
+const { reporters } = require("mocha");
 
 const app = express();
 const PORT = 8080; //default port 8080
@@ -68,6 +69,14 @@ function urlsForUser(id) {
   return output;
 }
 
+app.get("/", (req, res) => {
+  const currentUser = users[req.session.user_id];
+  if (currentUser) {
+    res.redirect("/urls");
+  }
+  res.redirect("/login");
+});
+
 //SHOW ALL URLS
 app.get("/urls", (req, res) => {
   const currentUser = users[req.session.user_id];
@@ -82,25 +91,33 @@ app.get("/urls", (req, res) => {
   res.render("urls_index", templateVars);
 });
 
-//POST METHOD CALL FROM DELETE BUTTON
-app.post("/urls/:shortURL/delete", (req, res) => {
-  //check if current user is signed in
-  const currentUser = users[req.session.user_id];
-  if (!currentUser) {
-    return res.status(400).send("ERROR 400: INVALID USER PERMISSIONS");
-  }
-  //delete url
-  const shortURL = req.params.shortURL;
-  delete urlDatabase[shortURL];
-  //redirct to url_index (/urls)
-  res.redirect("/urls");
-});
-
 //GET METHOD TO RENDER CREATE NEW URL PAGE
 app.get("/urls/new", (req, res) => {
   const currentUser = users[req.session.user_id];
   const templateVars = { user: currentUser };
   res.render("urls_new", templateVars);
+});
+
+//RENDER SINGLE URL SHOW PAGE
+app.get("/urls/:shortURL", (req, res) => {
+  const currentUser = users[req.session.user_id];
+  const templateVars = {
+    user: currentUser,
+    shortURL: req.params.shortURL,
+    longURL: urlDatabase[req.params.shortURL].longURL,
+    userID: urlDatabase[req.params.shortURL].userID,
+  };
+  res.render("urls_show", templateVars);
+});
+
+//REDIRECT TO LONG URL FROM URL SHOW PAGE
+app.get("/u/:shortURL", (req, res) => {
+  if (urlDatabase[req.params.shortURL]) {
+    const longURL = urlDatabase[req.params.shortURL].longURL;
+    res.redirect(longURL);
+  } else {
+    res.status(404).send("ERROR 404: PAGE NOT FOUND");
+  }
 });
 
 //POST METHOD CALL TO ADD NEW URL
@@ -134,26 +151,42 @@ app.post("/urls/:shortURL", (req, res) => {
   res.redirect("/urls");
 });
 
-//RENDER SINGLE URL SHOW PAGE
-app.get("/urls/:shortURL", (req, res) => {
+//POST METHOD CALL FROM DELETE BUTTON
+app.post("/urls/:shortURL/delete", (req, res) => {
+  //check if current user is signed in
   const currentUser = users[req.session.user_id];
-  const templateVars = {
-    user: currentUser,
-    shortURL: req.params.shortURL,
-    longURL: urlDatabase[req.params.shortURL].longURL,
-    userID: urlDatabase[req.params.shortURL].userID,
-  };
-  res.render("urls_show", templateVars);
+  if (!currentUser) {
+    return res.status(400).send("ERROR 400: INVALID USER PERMISSIONS");
+  }
+  //delete url
+  const shortURL = req.params.shortURL;
+  delete urlDatabase[shortURL];
+  //redirct to url_index (/urls)
+  res.redirect("/urls");
 });
 
-//REDIRECT TO LONG URL FROM URL SHOW PAGE
-app.get("/u/:shortURL", (req, res) => {
-  if (urlDatabase[req.params.shortURL]) {
-    const longURL = urlDatabase[req.params.shortURL].longURL;
-    res.redirect(longURL);
-  } else {
-    res.status(404).send("ERROR 404: PAGE NOT FOUND");
+//GET METHOD TO RENDER LOGIN PAGE
+app.get("/login", (req, res) => {
+  const currentUser = users[req.session.user_id];
+  if (currentUser) {
+    res.redirect("/urls");
   }
+  const templateVars = {
+    user: currentUser,
+  };
+  res.render("login", templateVars);
+});
+
+//GET REQUEST TO RENDER REGISTER PAGE
+app.get("/register", (req, res) => {
+  const currentUser = users[req.session.user_id];
+  if (currentUser) {
+    res.redirect("/urls");
+  }
+  const templateVars = {
+    user: currentUser,
+  };
+  res.render("register", templateVars);
 });
 
 //POST METHOD TO HANDLE LOGIN SUBMISSION
@@ -161,20 +194,47 @@ app.post("/login", (req, res) => {
   const { email, password } = req.body;
   const currentUser = getUserByEmail(email, users);
 
-  console.log("current", currentUser);
-
+  //check is user exists and compare to password
   if (currentUser) {
-    // const hashedPassword = bcrypt.hashSync(currentUser.password, 10);
     if (bcrypt.compareSync(password, currentUser.password)) {
-      // res.cookie("user_id", currentUser.id);
+      //create cookie and redirect
       req.session.user_id = currentUser.id;
       res.redirect("/urls");
     } else {
+      //error checking wrong password
       res.status(403).send("ERROR 403: WRONG PASSWORD");
     }
   } else {
+    //error checking not existing email
     res.status(403).send("ERROR 403: EMAIL NOT FOUND");
   }
+});
+
+//POST REQUEST TO HANDLE REGISTER SUBMISSION
+app.post("/register", (req, res) => {
+  //check if email and password are empty strings
+  if (!req.body.email || !req.body.password) {
+    return res.status(400).send("Error 400: Empty Email or Password");
+  }
+
+  //check if email already within database
+  if (getUserByEmail(req.body.email, users)) {
+    return res.status(400).send("Error 400: Email already Exists");
+  }
+
+  //generate new userID and create new object in users
+  const userID = generateRandomString();
+  const password = req.body.password;
+  const hashedPassword = bcrypt.hashSync(password, 10);
+  users[userID] = {
+    id: userID,
+    email: req.body.email,
+    password: hashedPassword,
+  };
+
+  //create new cookie and redirects to /urls
+  req.session.user_id = userID;
+  res.redirect("/urls");
 });
 
 //POST METHOD TO HANDLE LOGOUT (CLEAR COOKIE)
@@ -187,61 +247,7 @@ app.post("/logout", (req, res) => {
   res.redirect("/urls");
 });
 
-//GET REQUEST TO RENDER REGISTER PAGE
-app.get("/register", (req, res) => {
-  const currentUser = users[req.session.user_id];
-  const templateVars = {
-    user: currentUser,
-  };
-  res.render("register", templateVars);
-});
-
-//POST REQUEST TO HANDLE REGISTER SUBMISSION
-app.post("/register", (req, res) => {
-  //check if email and password are empty strings
-  if (!req.body.email || !req.body.password) {
-    return res.status(400).send("Error 400: Empty Email or Password");
-  }
-
-  //check if email already within database
-  // if (checkEmailWithinUsers(users, req.body.email)) {
-  // return res.status(400).send("Error 400: Email already Exists");
-  // }
-
-  if (getUserByEmail(req.body.email, users)) {
-    return res.status(400).send("Error 400: Email already Exists");
-  }
-
-  //generate new userID and create new object in users
-  const userID = generateRandomString();
-  // console.log(req.body);
-  const password = req.body.password;
-  const hashedPassword = bcrypt.hashSync(password, 10);
-  // console.log(hashedPassword);
-  // console.log(bcrypt.compareSync(req.body.password, hashedPassword));
-  users[userID] = {
-    id: userID,
-    email: req.body.email,
-    password: hashedPassword,
-  };
-
-  console.log(users);
-  //create new cookie
-  req.session.user_id = userID;
-  // console.log(users);
-  res.redirect("/urls");
-});
-
-//GET METHOD TO RENDER LOGIN PAGE
-app.get("/login", (req, res) => {
-  const currentUser = users[req.session.user_id];
-  const templateVars = {
-    user: currentUser,
-  };
-  res.render("login", templateVars);
-});
-
 //LISTENING APP
 app.listen(PORT, () => {
-  console.log(`Example app listening on port ${PORT}`);
+  console.log(`TinyApp Server listening on port ${PORT}`);
 });
