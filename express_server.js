@@ -43,6 +43,16 @@ function generateRandomString() {
   return result;
 }
 
+function urlsForUser(id) {
+  let output = {};
+  for (let url in urlDatabase) {
+    if (urlDatabase[url].userID === id) {
+      output[url] = urlDatabase[url];
+    }
+  }
+  return output;
+}
+
 //SHOW ALL URLS
 app.get("/urls", (req, res) => {
   const currentUser = users[req.cookies["user_id"]];
@@ -50,6 +60,7 @@ app.get("/urls", (req, res) => {
     urls: urlDatabase,
     user: currentUser,
   };
+  // console.log(urlsForUser(currentUser.id));
   res.render("urls_index", templateVars);
 });
 
@@ -104,6 +115,7 @@ app.get("/urls/:shortURL", (req, res) => {
     user: currentUser,
     shortURL: req.params.shortURL,
     longURL: urlDatabase[req.params.shortURL].longURL,
+    userID: urlDatabase[req.params.shortURL].userID,
   };
   res.render("urls_show", templateVars);
 });
