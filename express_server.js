@@ -3,6 +3,7 @@ const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
 const morgan = require("morgan");
 const bcrypt = require("bcryptjs");
+const cookieSession = require("cookie-session");
 
 const app = express();
 const PORT = 8080; //default port 8080
@@ -11,6 +12,12 @@ app.set("view engine", "ejs");
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(morgan("dev"));
 app.use(cookieParser());
+app.use(
+  cookieSession({
+    name: "session",
+    keys: ["key1", "key2"],
+  })
+);
 
 const urlDatabase = {
   b2xVn2: {
@@ -62,7 +69,7 @@ function urlsForUser(id) {
 
 //SHOW ALL URLS
 app.get("/urls", (req, res) => {
-  const currentUser = users[req.cookies["user_id"]];
+  const currentUser = users[req.session.user_id];
   let urls = {};
   if (currentUser) {
     urls = urlsForUser(currentUser.id);
@@ -77,7 +84,7 @@ app.get("/urls", (req, res) => {
 //POST METHOD CALL FROM DELETE BUTTON
 app.post("/urls/:shortURL/delete", (req, res) => {
   //check if current user is signed in
-  const currentUser = users[req.cookies["user_id"]];
+  const currentUser = users[req.session.user_id];
   if (!currentUser) {
     return res.status(400).send("ERROR 400: INVALID USER PERMISSIONS");
   }
@@ -90,7 +97,7 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 
 //GET METHOD TO RENDER CREATE NEW URL PAGE
 app.get("/urls/new", (req, res) => {
-  const currentUser = users[req.cookies["user_id"]];
+  const currentUser = users[req.session.user_id];
   const templateVars = { user: currentUser };
   res.render("urls_new", templateVars);
 });
@@ -98,7 +105,7 @@ app.get("/urls/new", (req, res) => {
 //POST METHOD CALL TO ADD NEW URL
 app.post("/urls", (req, res) => {
   //check if currently logged in to create new
-  const currentUser = users[req.cookies["user_id"]];
+  const currentUser = users[req.session.user_id];
   if (!currentUser) {
     res.status(403).send("ERROR 403: NOT LOGGED IN");
   }
@@ -106,14 +113,14 @@ app.post("/urls", (req, res) => {
   const newShortURL = generateRandomString();
   urlDatabase[newShortURL] = {
     longURL: req.body.longURL,
-    userID: req.cookies["user_id"],
+    userID: req.session.user_id,
   };
   res.redirect(`/urls/${newShortURL}`);
 });
 
 //POST METHOD TO EDIT LONG URL
 app.post("/urls/:shortURL", (req, res) => {
-  const currentUser = users[req.cookies["user_id"]];
+  const currentUser = users[req.session.user_id];
   if (!currentUser) {
     return res.status(400).send("ERROR 400: INVALID USER PERMISSIONS");
   }
@@ -128,7 +135,7 @@ app.post("/urls/:shortURL", (req, res) => {
 
 //RENDER SINGLE URL SHOW PAGE
 app.get("/urls/:shortURL", (req, res) => {
-  const currentUser = users[req.cookies["user_id"]];
+  const currentUser = users[req.session.user_id];
   const templateVars = {
     user: currentUser,
     shortURL: req.params.shortURL,
@@ -160,50 +167,41 @@ function lookupUser(users, email) {
 app.post("/login", (req, res) => {
   const { email, password } = req.body;
   const currentUser = lookupUser(users, email);
-  const hashedPassword = bcrypt.hashSync(currentUser.password, 10);
 
-  if (email.length === 0 || password.length === 0) {
-    res.status(403).send("ERROR 403: EMAIL OR PASSWORD NOT FOUND");
-    return;
-  }
+  console.log("current", currentUser);
 
   if (currentUser) {
+    const hashedPassword = bcrypt.hashSync(currentUser.password, 10);
     if (bcrypt.compareSync(password, hashedPassword)) {
-      res.cookie("user_id", currentUser.id);
+      // res.cookie("user_id", currentUser.id);
+      req.session.user_id = currentUser.id;
       res.redirect("/urls");
+    } else {
+      res.status(403).send("ERROR 403: WRONG PASSWORD");
     }
+  } else {
+    res.status(403).send("ERROR 403: EMAIL NOT FOUND");
   }
-  res.status(403).send("ERROR 403: WRONG PASSWORD");
 });
 
 //POST METHOD TO HANDLE LOGOUT (CLEAR COOKIE)
 app.post("/logout", (req, res) => {
   //clear cookies
-  res.clearCookie("user_id");
+  res.clearCookie("session");
+  res.clearCookie("session.sig");
+
   //redriect to /urls
   res.redirect("/urls");
 });
 
 //GET REQUEST TO RENDER REGISTER PAGE
 app.get("/register", (req, res) => {
-  const currentUser = users[req.cookies["user_id"]];
+  const currentUser = users[req.session.user_id];
   const templateVars = {
     user: currentUser,
   };
   res.render("register", templateVars);
 });
-
-function checkEmailPassWithinUsers(users, submittedEmail, submittedPassword) {
-  for (let user in users) {
-    if (
-      users[user].email === submittedEmail &&
-      users[user].password === submittedPassword
-    ) {
-      return true;
-    }
-  }
-  return false;
-}
 
 function checkEmailWithinUsers(users, submittedEmail) {
   for (let user in users) {
@@ -241,14 +239,14 @@ app.post("/register", (req, res) => {
 
   console.log(users);
   //create new cookie
-  res.cookie("user_id", userID);
+  req.session.user_id = userID;
   // console.log(users);
   res.redirect("/urls");
 });
 
 //GET METHOD TO RENDER LOGIN PAGE
 app.get("/login", (req, res) => {
-  const currentUser = users[req.cookies["user_id"]];
+  const currentUser = users[req.session.user_id];
   const templateVars = {
     user: currentUser,
   };
