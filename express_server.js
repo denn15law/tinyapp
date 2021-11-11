@@ -159,7 +159,7 @@ app.get("/u/:shortURL", (req, res) => {
 //POST METHOD TO HANDLE LOGIN SUBMISSION
 app.post("/login", (req, res) => {
   const { email, password } = req.body;
-  const currentUser = getUserByEmail(users, email);
+  const currentUser = getUserByEmail(email, users);
 
   console.log("current", currentUser);
 
@@ -208,7 +208,7 @@ app.post("/register", (req, res) => {
   // return res.status(400).send("Error 400: Email already Exists");
   // }
 
-  if (getUserByEmail(users, req.body.email)) {
+  if (getUserByEmail(req.body.email, users)) {
     return res.status(400).send("Error 400: Email already Exists");
   }
 
