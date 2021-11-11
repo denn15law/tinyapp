@@ -12,8 +12,8 @@
   </header>
 
   <% if(!user || user.id !== userID) { %>
-    <div class="alert alert-danger my-3" role="alert">
-      Please Login or Register to view shortened URL link
+    <div class="alert alert-danger my-3 text-center" role="alert">
+      You are not logged in or you do not own this shortened URL!
     </div>
   <% } else { %>
     <div class="card text-center">
