@@ -171,8 +171,8 @@ app.post("/login", (req, res) => {
   console.log("current", currentUser);
 
   if (currentUser) {
-    const hashedPassword = bcrypt.hashSync(currentUser.password, 10);
-    if (bcrypt.compareSync(password, hashedPassword)) {
+    // const hashedPassword = bcrypt.hashSync(currentUser.password, 10);
+    if (bcrypt.compareSync(password, currentUser.password)) {
       // res.cookie("user_id", currentUser.id);
       req.session.user_id = currentUser.id;
       res.redirect("/urls");
