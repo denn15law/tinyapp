@@ -50,8 +50,6 @@ app.get("/urls", (req, res) => {
     urls: urlDatabase,
     user: currentUser,
   };
-  console.log(urlDatabase);
-  console.log(currentUser);
   res.render("urls_index", templateVars);
 });
 
@@ -112,8 +110,12 @@ app.get("/urls/:shortURL", (req, res) => {
 
 //REDIRECT TO LONG URL FROM URL SHOW PAGE
 app.get("/u/:shortURL", (req, res) => {
-  const longURL = urlDatabase[req.params.shortURL].longURL;
-  res.redirect(longURL);
+  if (urlDatabase[req.params.shortURL]) {
+    const longURL = urlDatabase[req.params.shortURL].longURL;
+    res.redirect(longURL);
+  } else {
+    res.status(404).send("ERROR 404: PAGE NOT FOUND");
+  }
 });
 
 function lookupUser(users, email) {
