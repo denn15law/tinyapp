@@ -4,6 +4,7 @@ const cookieParser = require("cookie-parser");
 const morgan = require("morgan");
 const bcrypt = require("bcryptjs");
 const cookieSession = require("cookie-session");
+const { getUserByEmail } = require("./helpers");
 
 const app = express();
 const PORT = 8080; //default port 8080
@@ -155,18 +156,10 @@ app.get("/u/:shortURL", (req, res) => {
   }
 });
 
-function lookupUser(users, email) {
-  for (let user in users) {
-    if (users[user].email === email) {
-      return users[user];
-    }
-  }
-}
-
 //POST METHOD TO HANDLE LOGIN SUBMISSION
 app.post("/login", (req, res) => {
   const { email, password } = req.body;
-  const currentUser = lookupUser(users, email);
+  const currentUser = getUserByEmail(users, email);
 
   console.log("current", currentUser);
 
@@ -203,15 +196,6 @@ app.get("/register", (req, res) => {
   res.render("register", templateVars);
 });
 
-function checkEmailWithinUsers(users, submittedEmail) {
-  for (let user in users) {
-    if (users[user].email === submittedEmail) {
-      return true;
-    }
-  }
-  return false;
-}
-
 //POST REQUEST TO HANDLE REGISTER SUBMISSION
 app.post("/register", (req, res) => {
   //check if email and password are empty strings
@@ -220,7 +204,11 @@ app.post("/register", (req, res) => {
   }
 
   //check if email already within database
-  if (checkEmailWithinUsers(users, req.body.email)) {
+  // if (checkEmailWithinUsers(users, req.body.email)) {
+  // return res.status(400).send("Error 400: Email already Exists");
+  // }
+
+  if (getUserByEmail(users, req.body.email)) {
     return res.status(400).send("Error 400: Email already Exists");
   }
 
