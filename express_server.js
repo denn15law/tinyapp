@@ -56,6 +56,7 @@ function urlsForUser(id) {
 //SHOW ALL URLS
 app.get("/urls", (req, res) => {
   const currentUser = users[req.cookies["user_id"]];
+  // console.log(currentUser);
   const templateVars = {
     urls: urlDatabase,
     user: currentUser,
@@ -66,6 +67,11 @@ app.get("/urls", (req, res) => {
 
 //POST METHOD CALL FROM DELETE BUTTON
 app.post("/urls/:shortURL/delete", (req, res) => {
+  //check if current user is signed in
+  const currentUser = users[req.cookies["user_id"]];
+  if (!currentUser) {
+    return res.status(400).send("ERROR 400: INVALID USER PERMISSIONS");
+  }
   //delete url
   const shortURL = req.params.shortURL;
   delete urlDatabase[shortURL];
@@ -100,6 +106,11 @@ app.post("/urls", (req, res) => {
 
 //POST METHOD TO EDIT LONG URL
 app.post("/urls/:shortURL", (req, res) => {
+  const currentUser = users[req.cookies["user_id"]];
+  if (!currentUser) {
+    return res.status(400).send("ERROR 400: INVALID USER PERMISSIONS");
+  }
+
   const shortURL = req.params.shortURL;
   const newLongURL = req.body.longURL;
 
