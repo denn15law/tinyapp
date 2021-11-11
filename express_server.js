@@ -1,13 +1,16 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
+const morgan = require("morgan");
+const bcrypt = require("bcryptjs");
 
 const app = express();
 const PORT = 8080; //default port 8080
 
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(cookieParser());
 app.set("view engine", "ejs");
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(morgan("dev"));
+app.use(cookieParser());
 
 const urlDatabase = {
   b2xVn2: {
@@ -17,6 +20,10 @@ const urlDatabase = {
   "9sm5xK": {
     longURL: "http://www.google.com",
     userID: "userRandomID",
+  },
+  f3hc75: {
+    longURL: "http://youtube.com",
+    userID: "user2RandomID",
   },
 };
 
@@ -56,12 +63,14 @@ function urlsForUser(id) {
 //SHOW ALL URLS
 app.get("/urls", (req, res) => {
   const currentUser = users[req.cookies["user_id"]];
-  // console.log(currentUser);
+  let urls = {};
+  if (currentUser) {
+    urls = urlsForUser(currentUser.id);
+  }
   const templateVars = {
-    urls: urlDatabase,
+    urls: urls,
     user: currentUser,
   };
-  // console.log(urlsForUser(currentUser.id));
   res.render("urls_index", templateVars);
 });
 
@@ -75,15 +84,13 @@ app.post("/urls/:shortURL/delete", (req, res) => {
   //delete url
   const shortURL = req.params.shortURL;
   delete urlDatabase[shortURL];
-
   //redirct to url_index (/urls)
   res.redirect("/urls");
 });
 
 //GET METHOD TO RENDER CREATE NEW URL PAGE
 app.get("/urls/new", (req, res) => {
-  const currentUserID = req.cookies["user_id"];
-  const currentUser = users[currentUserID];
+  const currentUser = users[req.cookies["user_id"]];
   const templateVars = { user: currentUser };
   res.render("urls_new", templateVars);
 });
@@ -152,18 +159,21 @@ function lookupUser(users, email) {
 //POST METHOD TO HANDLE LOGIN SUBMISSION
 app.post("/login", (req, res) => {
   const { email, password } = req.body;
+  const currentUser = lookupUser(users, email);
+  const hashedPassword = bcrypt.hashSync(currentUser.password, 10);
 
-  if (!checkEmailWithinUsers(users, email)) {
-    return res.status(403).send("ERROR 403: EMAIL NOT FOUND");
-  } else {
-    if (!checkEmailPassWithinUsers(users, email, password)) {
-      return res.status(403).send("ERROR 403: WRONG PASSWORD");
-    } else {
-      const currentUser = lookupUser(users, email);
+  if (email.length === 0 || password.length === 0) {
+    res.status(403).send("ERROR 403: EMAIL OR PASSWORD NOT FOUND");
+    return;
+  }
+
+  if (currentUser) {
+    if (bcrypt.compareSync(password, hashedPassword)) {
       res.cookie("user_id", currentUser.id);
+      res.redirect("/urls");
     }
   }
-  res.redirect("/urls");
+  res.status(403).send("ERROR 403: WRONG PASSWORD");
 });
 
 //POST METHOD TO HANDLE LOGOUT (CLEAR COOKIE)
@@ -218,12 +228,18 @@ app.post("/register", (req, res) => {
 
   //generate new userID and create new object in users
   const userID = generateRandomString();
+  // console.log(req.body);
+  const password = req.body.password;
+  const hashedPassword = bcrypt.hashSync(password, 10);
+  // console.log(hashedPassword);
+  // console.log(bcrypt.compareSync(req.body.password, hashedPassword));
   users[userID] = {
     id: userID,
     email: req.body.email,
-    password: req.body.password,
+    password: hashedPassword,
   };
 
+  console.log(users);
   //create new cookie
   res.cookie("user_id", userID);
   // console.log(users);

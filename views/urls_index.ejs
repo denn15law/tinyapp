@@ -33,7 +33,6 @@
         </thead>
         <tbody>
           <% for (let url in urls) { %>
-            <% if (user.id === urls[url].userID){ %>
               <tr>
                 <td><%= url %></td>
                 <td><%= urls[url].longURL %></td>
@@ -48,7 +47,6 @@
                   </form>
                 </td>
               </tr>
-            <% } %>
           <% } %>
         </tbody>
       </table>
