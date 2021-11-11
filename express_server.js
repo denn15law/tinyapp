@@ -101,18 +101,35 @@ app.get("/u/:shortURL", (req, res) => {
   res.redirect(longURL);
 });
 
-//POST METHOD TO HANDLE USERNAME SUBMISSION
+function lookupUser(users, email) {
+  for (let user in users) {
+    if (users[user].email === email) {
+      return users[user];
+    }
+  }
+}
+
+//POST METHOD TO HANDLE LOGIN SUBMISSION
 app.post("/login", (req, res) => {
-  // console.log(req.body);
-  res.cookie("username", req.body.username);
-  // console.log("cookie", req.cookies);
+  const { email, password } = req.body;
+
+  if (!checkEmailWithinUsers(users, email)) {
+    return res.status(403).send("ERROR 403: EMAIL NOT FOUND");
+  } else {
+    if (!checkEmailPassWithinUsers(users, email, password)) {
+      return res.status(403).send("ERROR 403: WRONG PASSWORD");
+    } else {
+      const currentUser = lookupUser(users, email);
+      res.cookie("user_id", currentUser.id);
+    }
+  }
   res.redirect("/urls");
 });
 
 //POST METHOD TO HANDLE LOGOUT (CLEAR COOKIE)
 app.post("/logout", (req, res) => {
   //clear cookies
-  res.clearCookie("username");
+  res.clearCookie("user_id");
   //redriect to /urls
   res.redirect("/urls");
 });
@@ -127,7 +144,19 @@ app.get("/register", (req, res) => {
   res.render("register", templateVars);
 });
 
-function checkEmailwithinUsers(users, submittedEmail) {
+function checkEmailPassWithinUsers(users, submittedEmail, submittedPassword) {
+  for (let user in users) {
+    if (
+      users[user].email === submittedEmail &&
+      users[user].password === submittedPassword
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function checkEmailWithinUsers(users, submittedEmail) {
   for (let user in users) {
     if (users[user].email === submittedEmail) {
       return true;
@@ -144,12 +173,9 @@ app.post("/register", (req, res) => {
   }
 
   //check if email already within database
-  if (checkEmailwithinUsers(users, req.body.email)) {
+  if (checkEmailWithinUsers(users, req.body.email)) {
     return res.status(400).send("Error 400: Email already Exists");
   }
-
-  //check user object for existing email
-  console.log(checkEmailwithinUsers(users, req.body.email));
 
   //generate new userID and create new object in users
   const userID = generateRandomString();
