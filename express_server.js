@@ -10,8 +10,14 @@ app.use(cookieParser());
 app.set("view engine", "ejs");
 
 const urlDatabase = {
-  b2xVn2: "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com",
+  b2xVn2: {
+    longURL: "http://www.lighthouselabs.ca",
+    userID: "userRandomID",
+  },
+  "9sm5xK": {
+    longURL: "http://www.google.com",
+    userID: "userRandomID",
+  },
 };
 
 const users = {
@@ -39,8 +45,7 @@ function generateRandomString() {
 
 //SHOW ALL URLS
 app.get("/urls", (req, res) => {
-  const currentUserID = req.cookies["user_id"];
-  const currentUser = users[currentUserID];
+  const currentUser = users[req.cookies["user_id"]];
   const templateVars = {
     urls: urlDatabase,
     user: currentUser,
@@ -58,7 +63,7 @@ app.post("/urls/:shortURL/delete", (req, res) => {
   res.redirect("/urls");
 });
 
-//CREATE NEW URL PAGE
+//GET METHOD TO RENDER CREATE NEW URL PAGE
 app.get("/urls/new", (req, res) => {
   const currentUserID = req.cookies["user_id"];
   const currentUser = users[currentUserID];
@@ -68,8 +73,17 @@ app.get("/urls/new", (req, res) => {
 
 //POST METHOD CALL TO ADD NEW URL
 app.post("/urls", (req, res) => {
+  //check if currently logged in to create new
+  const currentUser = users[req.cookies["user_id"]];
+  if (!currentUser) {
+    res.status(403).send("ERROR 403: NOT LOGGED IN");
+  }
+
   const newShortURL = generateRandomString();
-  urlDatabase[newShortURL] = req.body.longURL;
+  urlDatabase[newShortURL] = {
+    longURL: req.body.longURL,
+    userID: req.cookies["user_id"],
+  };
   res.redirect(`/urls/${newShortURL}`);
 });
 
@@ -79,25 +93,24 @@ app.post("/urls/:shortURL", (req, res) => {
   const newLongURL = req.body.longURL;
 
   //Make the edit to urlDatabase
-  urlDatabase[shortURL] = newLongURL;
+  urlDatabase[shortURL].longURL = newLongURL;
   res.redirect("/urls");
 });
 
 //RENDER SINGLE URL SHOW PAGE
 app.get("/urls/:shortURL", (req, res) => {
-  const currentUserID = req.cookies["user_id"];
-  const currentUser = users[currentUserID];
+  const currentUser = users[req.cookies["user_id"]];
   const templateVars = {
     user: currentUser,
     shortURL: req.params.shortURL,
-    longURL: urlDatabase[req.params.shortURL],
+    longURL: urlDatabase[req.params.shortURL].longURL,
   };
   res.render("urls_show", templateVars);
 });
 
-//USE REDIRECT TO LONG URL AFTER RENDERING URL SHOW PAGE
+//REDIRECT TO LONG URL FROM URL SHOW PAGE
 app.get("/u/:shortURL", (req, res) => {
-  const longURL = urlDatabase[req.params.shortURL];
+  const longURL = urlDatabase[req.params.shortURL].longURL;
   res.redirect(longURL);
 });
 
@@ -136,8 +149,7 @@ app.post("/logout", (req, res) => {
 
 //GET REQUEST TO RENDER REGISTER PAGE
 app.get("/register", (req, res) => {
-  const currentUserID = req.cookies["user_id"];
-  const currentUser = users[currentUserID];
+  const currentUser = users[req.cookies["user_id"]];
   const templateVars = {
     user: currentUser,
   };
@@ -193,8 +205,7 @@ app.post("/register", (req, res) => {
 
 //GET METHOD TO RENDER LOGIN PAGE
 app.get("/login", (req, res) => {
-  const currentUserID = req.cookies["user_id"];
-  const currentUser = users[currentUserID];
+  const currentUser = users[req.cookies["user_id"]];
   const templateVars = {
     user: currentUser,
   };
