@@ -4,8 +4,11 @@ const cookieParser = require("cookie-parser");
 const morgan = require("morgan");
 const bcrypt = require("bcryptjs");
 const cookieSession = require("cookie-session");
-const { getUserByEmail } = require("./helpers");
-const { reporters } = require("mocha");
+const {
+  getUserByEmail,
+  generateRandomString,
+  urlsForUser,
+} = require("./helpers");
 
 const app = express();
 const PORT = 8080; //default port 8080
@@ -49,26 +52,6 @@ const users = {
   },
 };
 
-function generateRandomString() {
-  let result = "";
-  const characters =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  for (let i = 0; i <= 6; i++) {
-    result += characters.charAt(Math.floor(Math.random() * characters.length));
-  }
-  return result;
-}
-
-function urlsForUser(id) {
-  let output = {};
-  for (let url in urlDatabase) {
-    if (urlDatabase[url].userID === id) {
-      output[url] = urlDatabase[url];
-    }
-  }
-  return output;
-}
-
 app.get("/", (req, res) => {
   const currentUser = users[req.session.user_id];
   if (currentUser) {
@@ -82,7 +65,7 @@ app.get("/urls", (req, res) => {
   const currentUser = users[req.session.user_id];
   let urls = {};
   if (currentUser) {
-    urls = urlsForUser(currentUser.id);
+    urls = urlsForUser(currentUser.id, urlDatabase);
   }
   const templateVars = {
     urls: urls,
