@@ -27,7 +27,7 @@
           <tr>
             <th scope="col">Short URL</th>
             <th scope="col">Long URL</th>
-            <th scope="col">Edit</th>
+            <th scope="col">Edit / View</th>
             <th scope="col">Delete</th>
           </tr>
         </thead>
@@ -38,7 +38,7 @@
                 <td><%= urls[url].longURL %></td>
                 <td>
                   <form method="GET" action="/urls/<%= url %>">
-                    <button type="submit" class="btn btn-outline-primary">Edit</button>
+                    <button type="submit" class="btn btn-outline-primary">Edit / View</button>
                   </form>
                 </td>
                 <td>
