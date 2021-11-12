@@ -1,12 +1,14 @@
 # TinyApp Project
 
-TinyApp is a full stack web application built with Node and Express that allows users to shorten long URLs (à la bit.ly).
+TinyApp is a full stack web application built by Dennis Law through Lighthouse Labs with Node and Express that allows users to shorten long URLs (à la bit.ly).
 
 ## Final Product
 
-!["screenshot description"](#)
+!["Main /urls Page After Succesful Login and Multiple Entries"](https://github.com/denn15law/tinyapp/blob/master/docs/tinyAppHomePage.png)
 
-!["screenshot description"](#)
+!["Register Page showing form with email and password"](https://github.com/denn15law/tinyapp/blob/master/docs/tinyAppRegister.png)
+
+!["Sample Page of newly created short URL!"](https://github.com/denn15law/tinyapp/blob/master/docs/tinyAppSampleURL.png)
 
 ## Dependencies
 
